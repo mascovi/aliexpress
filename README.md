@@ -1,49 +1,32 @@
-AliExpress Affiliate Telegram BOT  :
+# AliExpress Afiliado - API Flask
 
-https://t.me/AliXPromotion
+Este projeto expõe um endpoint em Flask para transformar qualquer link de produto do AliExpress em:
 
-- get_affiliate_links
-- get_promotion_products
-- get_promotion_product_detail
-- get_promotion_product_detail_from_link
-- get_hot_products
-- get_promotion_link
+- Link de afiliado com seu `aff_fsk`
+- Título do produto
+- Imagem
+- Preço
 
-## How to install :
+Ideal para integração com Make, Telegram, bots ou automações.
 
- pip install telebot
- pip install python-aliexpress-api --upgrade
- python Bot.py
+---
 
- OR just install requirements.txt
+## 📦 Como usar
 
- # You need : 
- - Aliexpress API 
- - Telegram bot Token
- - Tracking id (or write "default")
+### Endpoint:
 
 
+### Corpo da requisição:
+```json
+{
+  "url": "https://www.aliexpress.com/item/3256805354456256.html"
+}
 
-## How To get Aliexpress API : 
-# Sign Up for an Aliexpress Account:
 
- If you don’t already have an account, you need to create one.
-
-# Join the Aliexpress Affiliate Program: 
-Go to the Aliexpress Affiliate Program website and sign up as an affiliate. This is necessary because the API is primarily available to affiliates.
-
-# Apply for API Access:
-
-Once you are an approved affiliate, log in to your affiliate account.
-Navigate to the API section (usually under tools or resources).
-Apply for API access by providing the necessary information about how you plan to use the API.
-
-# Get Your API Key:
-
-After your application is reviewed and approved, you will receive your API key.
-The API key will be available in your affiliate account dashboard.
-
-### يسمح بإستعمال هذا الكود لغرض ربحي 
-# دعواتكم لنا
-
->> https://loudz.gumroad.com/l/cjsxvm
+{
+  "product_id": "3256805354456256",
+  "title": "Título do Produto",
+  "price": "87.90",
+  "image": "https://...",
+  "affiliate_link": "https://s.click.aliexpress.com/..."
+}
