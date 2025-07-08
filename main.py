@@ -7,8 +7,8 @@ app = Flask(__name__)
 
 # Dados de Pedro
 aliexpress = AliexpressApi(
-    app_key='514670',
-    app_secret='N03ZKerO5cChzHDiy4xk5jUJcxnpsHsu',
+    key='514670',
+    secret='N03ZKerO5cChzHDiy4xk5jUJcxnpsHsu',
     language=models.Language.PT,
     currency=models.Currency.BRL,
     tracking_id='cadadiaumcafe'
