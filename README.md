@@ -15,6 +15,7 @@ Ideal para integração com Make, Telegram, bots ou automações.
 
 ### Endpoint:
 
+POST /produto
 
 ### Corpo da requisição:
 ```json
@@ -22,6 +23,7 @@ Ideal para integração com Make, Telegram, bots ou automações.
   "url": "https://www.aliexpress.com/item/3256805354456256.html"
 }
 
+Resposta:
 
 {
   "product_id": "3256805354456256",
@@ -30,3 +32,4 @@ Ideal para integração com Make, Telegram, bots ou automações.
   "image": "https://...",
   "affiliate_link": "https://s.click.aliexpress.com/..."
 }
+
