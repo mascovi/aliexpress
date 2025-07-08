@@ -1,74 +1,81 @@
+
 from flask import Flask, request, jsonify
-import hmac
-import hashlib
-import time
-import urllib.parse
-import requests
-import os
+from aliexpress_api import AliexpressApi, models
+import re, urllib.parse, os
 
 app = Flask(__name__)
 
-# Dados da sua conta
-APP_KEY = "514670"
-APP_SECRET = "N03ZKerO5cChzHDiy4xk5jUJcxnpsHsu"
-AFF_FSK = "cadadiaumcafe"
+# Dados de Pedro
+aliexpress = AliexpressApi(
+    app_key='514670',
+    app_secret='N03ZKerO5cChzHDiy4xk5jUJcxnpsHsu',
+    language=models.Language.PT,
+    currency=models.Currency.BRL,
+    tracking_id='cadadiaumcafe'
+)
 
-def extract_product_id(url):
-    try:
-        clean = url.split('/')[-1]
-        return clean.split(".")[0]
-    except:
-        return None
-
-def generate_signature(params: dict, app_secret: str) -> str:
-    sorted_params = sorted((k, v) for k, v in params.items() if v is not None and k != 'sign')
-    base_string = ''.join(f"{k}{v}" for k, v in sorted_params)
-    signature = hmac.new(app_secret.encode('utf-8'), base_string.encode('utf-8'), hashlib.sha256)
-    return signature.hexdigest().upper()
+# Extrair link do texto
+def extract_link(text):
+    link_pattern = r'https?://\S+|www\.\S+'
+    links = re.findall(link_pattern, text)
+    return links[0] if links else None
 
 @app.route("/produto", methods=["POST"])
-def get_product_info():
-    data = request.json
-    url = data.get("url")
+def produto():
+    data = request.get_json()
+    text = data.get("text")
 
-    if not url or "aliexpress.com/item/" not in url:
-        return jsonify({"error": "URL inválida do AliExpress"}), 400
+    if not text:
+        return jsonify({"error": "Campo 'text' ausente no JSON"}), 400
 
-    product_id = extract_product_id(url)
-    if not product_id:
-        return jsonify({"error": "Não foi possível extrair o ID do produto"}), 400
+    link = extract_link(text)
 
-    method = "aliexpress.affiliate.productdetail.get"
-    timestamp = str(int(time.time() * 1000))
-    params = {
-        "app_key": APP_KEY,
-        "method": method,
-        "timestamp": timestamp,
-        "sign_method": "sha256",
-        "product_ids": product_id,
-        "target_currency": "BRL",
-        "target_language": "PT",
-        "tracking_id": AFF_FSK
-    }
+    if not link or "aliexpress.com" not in link:
+        return jsonify({"error": "Link do AliExpress inválido ou ausente"}), 400
 
-    sign = generate_signature(params, APP_SECRET)
-    params["sign"] = sign
-
-    url_api = "https://api-sg.aliexpress.com/sync"
-    response = requests.get(url_api, params=params)
-    
     try:
-        result = response.json()
-        item = result["resp_result"]["result"]["products"][0]
+        affiliate_links = aliexpress.get_affiliate_links(link)
+        affiliate_link = affiliate_links[0].promotion_link if affiliate_links else link
+
+        details = aliexpress.get_products_details([link])
+        if not details:
+            return jsonify({"error": "Produto não encontrado"}), 404
+
+        produto = details[0]
+
         return jsonify({
-            "product_id": item["product_id"],
-            "title": item["product_title"],
-            "price": item["sale_price"],
-            "image": item["product_main_image_url"],
-            "affiliate_link": item["promotion_link"]
+            "title": produto.product_title,
+            "price": produto.target.sale_price,
+            "image": produto.product_main_image_url,
+            "affiliate_link": affiliate_link
         })
+
     except Exception as e:
-        return jsonify({"error": "Erro ao buscar dados do produto", "detalhe": str(e)}), 500
+        return jsonify({"error": "Erro ao processar produto", "detalhe": str(e)}), 500
+
+@app.route("/buscar", methods=["GET"])
+def buscar():
+    keyword = request.args.get("keyword")
+    if not keyword:
+        return jsonify({"error": "Parâmetro 'keyword' é obrigatório"}), 400
+
+    try:
+        keyword_decoded = urllib.parse.unquote(keyword)
+        produtos = aliexpress.get_promotion_products(keyword=keyword_decoded, page=1, page_size=5)
+
+        resultados = []
+        for p in produtos:
+            resultados.append({
+                "title": p.product_title,
+                "price": p.target.sale_price,
+                "image": p.product_main_image_url,
+                "affiliate_link": p.promotion_link
+            })
+
+        return jsonify(resultados)
+
+    except Exception as e:
+        return jsonify({"error": "Erro na busca", "detalhe": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
